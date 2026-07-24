@@ -25,11 +25,12 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 var storagePrefix = "geniusauth:authorization:";
+var defaultAuthorizationEndpoint = "https://auth.geniuspay.tech/authorize";
 var GeniusAuth = class {
   static async login(options) {
     try {
       const pending = await this.createPendingAuthorization(options.redirectUri);
-      const url = new URL(options.authorizationEndpoint);
+      const url = new URL(options.authorizationEndpoint ?? defaultAuthorizationEndpoint);
       url.search = new URLSearchParams({
         client_id: options.clientId,
         redirect_uri: options.redirectUri,

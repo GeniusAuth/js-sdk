@@ -1,5 +1,5 @@
 export interface GeniusAuthLoginOptions {
-    authorizationEndpoint: string;
+    authorizationEndpoint?: string;
     clientId: string;
     redirectUri: string;
     scope?: string;
@@ -22,12 +22,13 @@ interface PendingAuthorization {
 }
 
 const storagePrefix = 'geniusauth:authorization:';
+const defaultAuthorizationEndpoint = 'https://auth.geniuspay.tech/authorize';
 
 export class GeniusAuth {
     static async login(options: GeniusAuthLoginOptions): Promise<void> {
         try {
             const pending = await this.createPendingAuthorization(options.redirectUri);
-            const url = new URL(options.authorizationEndpoint);
+            const url = new URL(options.authorizationEndpoint ?? defaultAuthorizationEndpoint);
             url.search = new URLSearchParams({
                 client_id: options.clientId,
                 redirect_uri: options.redirectUri,

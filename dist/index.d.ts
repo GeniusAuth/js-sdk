@@ -1,5 +1,5 @@
 interface GeniusAuthLoginOptions {
-    authorizationEndpoint: string;
+    authorizationEndpoint?: string;
     clientId: string;
     redirectUri: string;
     scope?: string;

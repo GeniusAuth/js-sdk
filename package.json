@@ -1,7 +1,18 @@
 {
   "name": "@geniusauth/js",
   "version": "0.1.0",
-  "description": "Browser SDK for GeniusAuth OpenID Connect authentication",
+  "description": "Official browser SDK for GeniusAuth OpenID Connect authentication.",
+  "keywords": ["authentication", "oauth2", "oidc", "openid-connect", "passkeys", "pkce", "webauthn"],
+  "license": "proprietary",
+  "author": "GENIUS GROUPS SAS",
+  "homepage": "https://auth.geniuspay.tech",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/geniusauth/js-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/geniusauth/js-sdk/issues"
+  },
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -16,10 +27,17 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

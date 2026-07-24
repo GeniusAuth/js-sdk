@@ -1,0 +1,6 @@
+src
+coverage
+.github
+.gitignore
+.npmignore
+tsconfig.json

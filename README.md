@@ -35,7 +35,13 @@ npm install @geniusauth/js
 import GeniusAuth from "@geniusauth/js";
 
 await GeniusAuth.login({
+    authorizationEndpoint: "https://auth.geniuspay.tech/authorize",
     clientId: "YOUR_CLIENT_ID",
+    redirectUri: `${window.location.origin}/auth/callback`,
+    success: ({ code, codeVerifier }) => {
+        // Exchange the authorization code on your backend.
+    },
+    error: console.error,
 });
 ```
 
@@ -50,8 +56,8 @@ await GeniusAuth.login({
 - OpenID Connect
 - Single Sign-On
 - PKCE
-- Automatic Token Refresh
-- Session Management
+- Authorization Code flow callbacks
+- Popup and redirect support
 - TypeScript Support
 
 ---
