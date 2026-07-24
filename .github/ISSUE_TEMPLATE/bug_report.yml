@@ -1,0 +1,23 @@
+name: Bug report
+description: Report a reproducible problem in the JavaScript SDK.
+title: '[Bug]: '
+labels: ['bug']
+body:
+    - type: textarea
+      attributes:
+          label: What happened?
+          description: Include the expected and actual behavior.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Reproduction
+          description: Provide minimal steps, browser, SDK version, and a small code sample.
+      validations:
+          required: true
+    - type: checkboxes
+      attributes:
+          label: Security
+          options:
+              - label: This is not a security vulnerability.
+                required: true

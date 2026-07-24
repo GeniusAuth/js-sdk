@@ -41,7 +41,10 @@ var GeniusAuth = class {
       return null;
     }
     if (window.opener) {
-      window.opener.postMessage({ type: "geniusauth:callback", result: { code, state } }, url.origin);
+      window.opener.postMessage(
+        { type: "geniusauth:callback", result: { code, state } },
+        url.origin
+      );
       window.close();
       return null;
     }
@@ -74,7 +77,10 @@ var GeniusAuth = class {
   }
   static awaitPopupResult(pending, popup) {
     return new Promise((resolve, reject) => {
-      const timeout = window.setTimeout(() => finish(new Error("GeniusAuth popup timed out.")), 3e5);
+      const timeout = window.setTimeout(
+        () => finish(new Error("GeniusAuth popup timed out.")),
+        3e5
+      );
       const interval = window.setInterval(() => {
         if (popup.closed) {
           finish(new Error("GeniusAuth popup was closed."));
@@ -122,7 +128,11 @@ var GeniusAuth = class {
     return this.base64Url(bytes);
   }
   static async challenge(verifier) {
-    return this.base64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
+    return this.base64Url(
+      new Uint8Array(
+        await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))
+      )
+    );
   }
   static base64Url(bytes) {
     return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");

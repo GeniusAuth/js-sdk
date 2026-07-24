@@ -69,7 +69,10 @@ export class GeniusAuth {
         }
 
         if (window.opener) {
-            window.opener.postMessage({type: 'geniusauth:callback', result: {code, state}}, url.origin);
+            window.opener.postMessage(
+                { type: 'geniusauth:callback', result: { code, state } },
+                url.origin,
+            );
             window.close();
             return null;
         }
@@ -81,10 +84,12 @@ export class GeniusAuth {
 
         sessionStorage.removeItem(storagePrefix + state);
 
-        return {code, state, codeVerifier: pending.codeVerifier};
+        return { code, state, codeVerifier: pending.codeVerifier };
     }
 
-    static logout(options: {endSessionEndpoint?: string; postLogoutRedirectUri?: string} = {}): void {
+    static logout(
+        options: { endSessionEndpoint?: string; postLogoutRedirectUri?: string } = {},
+    ): void {
         if (!options.endSessionEndpoint) {
             return;
         }
@@ -95,7 +100,9 @@ export class GeniusAuth {
         window.location.assign(url);
     }
 
-    private static async createPendingAuthorization(redirectUri: string): Promise<PendingAuthorization> {
+    private static async createPendingAuthorization(
+        redirectUri: string,
+    ): Promise<PendingAuthorization> {
         const pending = {
             state: this.randomValue(32),
             codeVerifier: this.randomValue(64),
@@ -107,9 +114,15 @@ export class GeniusAuth {
         return pending;
     }
 
-    private static awaitPopupResult(pending: PendingAuthorization, popup: Window): Promise<GeniusAuthAuthorizationResult> {
+    private static awaitPopupResult(
+        pending: PendingAuthorization,
+        popup: Window,
+    ): Promise<GeniusAuthAuthorizationResult> {
         return new Promise((resolve, reject) => {
-            const timeout = window.setTimeout(() => finish(new Error('GeniusAuth popup timed out.')), 300000);
+            const timeout = window.setTimeout(
+                () => finish(new Error('GeniusAuth popup timed out.')),
+                300000,
+            );
             const interval = window.setInterval(() => {
                 if (popup.closed) {
                     finish(new Error('GeniusAuth popup was closed.'));
@@ -126,16 +139,22 @@ export class GeniusAuth {
                 }
             };
             const onMessage = (event: MessageEvent) => {
-                if (event.origin !== new URL(pending.redirectUri).origin || event.data?.type !== 'geniusauth:callback') {
+                if (
+                    event.origin !== new URL(pending.redirectUri).origin ||
+                    event.data?.type !== 'geniusauth:callback'
+                ) {
                     return;
                 }
-                const result = event.data.result as Pick<GeniusAuthAuthorizationResult, 'code' | 'state'>;
+                const result = event.data.result as Pick<
+                    GeniusAuthAuthorizationResult,
+                    'code' | 'state'
+                >;
                 if (result.state !== pending.state) {
                     finish(new Error('Invalid GeniusAuth popup response.'));
                     return;
                 }
                 sessionStorage.removeItem(storagePrefix + pending.state);
-                finish(undefined, {...result, codeVerifier: pending.codeVerifier});
+                finish(undefined, { ...result, codeVerifier: pending.codeVerifier });
             };
             window.addEventListener('message', onMessage);
         });
@@ -161,11 +180,18 @@ export class GeniusAuth {
     }
 
     private static async challenge(verifier: string): Promise<string> {
-        return this.base64Url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))));
+        return this.base64Url(
+            new Uint8Array(
+                await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)),
+            ),
+        );
     }
 
     private static base64Url(bytes: Uint8Array): string {
-        return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        return btoa(String.fromCharCode(...bytes))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/g, '');
     }
 }
 

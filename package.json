@@ -1,43 +1,74 @@
 {
-  "name": "@geniusauth/js",
-  "version": "0.1.0",
-  "description": "Official browser SDK for GeniusAuth OpenID Connect authentication.",
-  "keywords": ["authentication", "oauth2", "oidc", "openid-connect", "passkeys", "pkce", "webauthn"],
-  "license": "proprietary",
-  "author": "GENIUS GROUPS SAS",
-  "homepage": "https://auth.geniuspay.tech",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/geniusauth/js-sdk.git"
-  },
-  "bugs": {
-    "url": "https://github.com/geniusauth/js-sdk/issues"
-  },
-  "type": "module",
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+    "name": "@geniusauth/js",
+    "version": "0.1.0",
+    "description": "Official browser SDK for GeniusAuth OpenID Connect authentication.",
+    "keywords": [
+        "authentication",
+        "oauth2",
+        "oidc",
+        "openid-connect",
+        "passkeys",
+        "pkce",
+        "webauthn"
+    ],
+    "license": "MIT",
+    "author": "GENIUS GROUPS SAS",
+    "homepage": "https://docs.geniusauth.com",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/GeniusAuth/js-sdk.git"
+    },
+    "bugs": {
+        "url": "https://github.com/GeniusAuth/js-sdk/issues"
+    },
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs",
+            "default": "./dist/index.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE",
+        "CHANGELOG.md"
+    ],
+    "sideEffects": false,
+    "scripts": {
+        "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint .",
+        "format:check": "prettier --check .",
+        "format": "prettier --write .",
+        "test": "vitest run",
+        "test:coverage": "vitest run --coverage",
+        "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build",
+        "prepublishOnly": "npm run check"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.22.0",
+        "@vitest/coverage-v8": "^3.0.8",
+        "eslint": "^9.22.0",
+        "prettier": "^3.5.3",
+        "tsup": "^8.3.5",
+        "typescript": "^5.7.2",
+        "typescript-eslint": "^8.26.0",
+        "vitest": "^3.0.8"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "overrides": {
+        "esbuild": "0.28.1"
     }
-  },
-  "files": ["dist"],
-  "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run typecheck && npm run build"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "devDependencies": {
-    "tsup": "^8.3.5",
-    "typescript": "^5.7.2"
-  },
-  "engines": {
-    "node": ">=18"
-  }
 }

@@ -1,0 +1,15 @@
+name: Feature request
+description: Suggest an improvement for the JavaScript SDK.
+title: '[Feature]: '
+labels: ['enhancement']
+body:
+    - type: textarea
+      attributes:
+          label: Problem
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Proposed solution
+      validations:
+          required: true
