@@ -23,14 +23,16 @@ jobs:
                   fetch-depth: 0
             - uses: actions/setup-node@v4
               with:
-                  node-version: 20
+                  node-version: 24
                   registry-url: https://registry.npmjs.org
                   cache: npm
             - run: npm ci
             - run: npm run check
             - name: Verify release version
               if: github.event_name == 'push'
-              run: test "v$(node -p \"require('./package.json').version\")" = "$GITHUB_REF_NAME"
+              run: |
+                  VERSION=$(node -p "require('./package.json').version")
+                  test "v$VERSION" = "$GITHUB_REF_NAME"
             - name: Create GitHub release
               if: github.event_name == 'push'
               env:
