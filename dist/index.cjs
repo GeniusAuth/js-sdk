@@ -25,7 +25,10 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 var storagePrefix = "geniusauth:authorization:";
+var sessionStorageKey = "geniusauth:session";
 var defaultAuthorizationEndpoint = "https://auth.geniuspay.tech/authorize";
+var defaultTokenEndpoint = "https://auth.geniuspay.tech/token";
+var refreshLeewaySeconds = 30;
 var GeniusAuth = class {
   static async login(options) {
     try {
@@ -80,7 +83,45 @@ var GeniusAuth = class {
     sessionStorage.removeItem(storagePrefix + state);
     return { code, state, codeVerifier: pending.codeVerifier };
   }
+  static async exchangeToken(options) {
+    const tokenEndpoint = options.tokenEndpoint ?? defaultTokenEndpoint;
+    const session = await this.requestTokens(tokenEndpoint, {
+      grant_type: "authorization_code",
+      client_id: options.clientId,
+      code: options.code,
+      redirect_uri: options.redirectUri,
+      code_verifier: options.codeVerifier
+    });
+    this.storeSession(session, options.clientId, tokenEndpoint);
+    return session;
+  }
+  static getUser() {
+    const stored = this.readSession();
+    return stored?.user ?? null;
+  }
+  static async getAccessToken() {
+    const stored = this.readSession();
+    if (!stored) {
+      return null;
+    }
+    if (Date.now() < stored.expiresAt - refreshLeewaySeconds * 1e3) {
+      return stored.accessToken;
+    }
+    try {
+      const session = await this.requestTokens(stored.tokenEndpoint, {
+        grant_type: "refresh_token",
+        client_id: stored.clientId,
+        refresh_token: stored.refreshToken
+      });
+      this.storeSession(session, stored.clientId, stored.tokenEndpoint);
+      return session.accessToken;
+    } catch {
+      sessionStorage.removeItem(sessionStorageKey);
+      return null;
+    }
+  }
   static logout(options = {}) {
+    sessionStorage.removeItem(sessionStorageKey);
     if (!options.endSessionEndpoint) {
       return;
     }
@@ -89,6 +130,64 @@ var GeniusAuth = class {
       url.searchParams.set("post_logout_redirect_uri", options.postLogoutRedirectUri);
     }
     window.location.assign(url);
+  }
+  static async requestTokens(tokenEndpoint, body) {
+    const response = await fetch(tokenEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(body).toString()
+    });
+    if (!response.ok) {
+      throw new Error(`GeniusAuth token request failed (${response.status}).`);
+    }
+    const payload = await response.json();
+    return {
+      accessToken: payload.access_token,
+      idToken: payload.id_token,
+      refreshToken: payload.refresh_token,
+      expiresAt: Date.now() + payload.expires_in * 1e3,
+      scope: payload.scope,
+      user: this.decodeUser(payload.id_token)
+    };
+  }
+  static storeSession(session, clientId, tokenEndpoint) {
+    const stored = { ...session, clientId, tokenEndpoint };
+    sessionStorage.setItem(sessionStorageKey, JSON.stringify(stored));
+  }
+  static readSession() {
+    const raw = sessionStorage.getItem(sessionStorageKey);
+    if (!raw) {
+      return null;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  static decodeUser(idToken) {
+    const [, payload] = idToken.split(".");
+    if (!payload) {
+      throw new Error("GeniusAuth received a malformed ID token.");
+    }
+    const claims = JSON.parse(this.base64UrlDecode(payload));
+    return {
+      sub: String(claims.sub),
+      email: typeof claims.email === "string" ? claims.email : void 0,
+      emailVerified: typeof claims.email_verified === "boolean" ? claims.email_verified : void 0,
+      name: typeof claims.name === "string" ? claims.name : void 0,
+      geniusId: typeof claims.genius_id === "string" ? claims.genius_id : void 0,
+      phone: typeof claims.phone === "string" ? claims.phone : void 0,
+      phoneVerified: typeof claims.phone_verified === "boolean" ? claims.phone_verified : void 0,
+      userType: typeof claims.user_type === "string" ? claims.user_type : void 0,
+      roles: Array.isArray(claims.roles) ? claims.roles : void 0
+    };
+  }
+  static base64UrlDecode(value) {
+    const base64 = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(value.length + (4 - value.length % 4) % 4, "=");
+    return decodeURIComponent(
+      atob(base64).split("").map((c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join("")
+    );
   }
   static async createPendingAuthorization(redirectUri) {
     const pending = {
