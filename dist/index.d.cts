@@ -19,6 +19,13 @@ interface GeniusAuthExchangeOptions {
     redirectUri: string;
     tokenEndpoint?: string;
 }
+interface GeniusAuthSilentOptions {
+    authorizationEndpoint?: string;
+    clientId: string;
+    redirectUri: string;
+    scope?: string;
+    timeoutMs?: number;
+}
 interface GeniusAuthUser {
     sub: string;
     email?: string;
@@ -41,6 +48,14 @@ interface GeniusAuthSession {
 declare class GeniusAuth {
     static login(options: GeniusAuthLoginOptions): Promise<void>;
     static handleCallback(): GeniusAuthAuthorizationResult | null;
+    /**
+     * Silent SSO — checks for an existing GeniusAuth session without any
+     * visible redirect or popup, via a hidden iframe + `prompt=none`.
+     * Resolves the authorization result if the user already has an active
+     * session (so the caller can exchangeToken() right away), or `null` if
+     * they don't (or the check times out) — never rejects.
+     */
+    static checkSession(options: GeniusAuthSilentOptions): Promise<GeniusAuthAuthorizationResult | null>;
     static exchangeToken(options: GeniusAuthExchangeOptions): Promise<GeniusAuthSession>;
     static getUser(): GeniusAuthUser | null;
     static getAccessToken(): Promise<string | null>;
@@ -61,4 +76,4 @@ declare class GeniusAuth {
     private static base64Url;
 }
 
-export { GeniusAuth, type GeniusAuthAuthorizationResult, type GeniusAuthExchangeOptions, type GeniusAuthLoginOptions, type GeniusAuthSession, type GeniusAuthUser, GeniusAuth as default };
+export { GeniusAuth, type GeniusAuthAuthorizationResult, type GeniusAuthExchangeOptions, type GeniusAuthLoginOptions, type GeniusAuthSession, type GeniusAuthSilentOptions, type GeniusAuthUser, GeniusAuth as default };

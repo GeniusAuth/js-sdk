@@ -62,18 +62,21 @@ var GeniusAuth = class {
     const error = url.searchParams.get("error");
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
+    const host = window.opener ?? (window.parent !== window ? window.parent : null);
+    if (host) {
+      host.postMessage(
+        error ? { type: "geniusauth:callback", error, state } : { type: "geniusauth:callback", result: { code, state } },
+        url.origin
+      );
+      if (window.opener) {
+        window.close();
+      }
+      return null;
+    }
     if (error) {
       throw new Error(error);
     }
     if (!code || !state) {
-      return null;
-    }
-    if (window.opener) {
-      window.opener.postMessage(
-        { type: "geniusauth:callback", result: { code, state } },
-        url.origin
-      );
-      window.close();
       return null;
     }
     const pending = this.readPending(state);
@@ -82,6 +85,59 @@ var GeniusAuth = class {
     }
     sessionStorage.removeItem(storagePrefix + state);
     return { code, state, codeVerifier: pending.codeVerifier };
+  }
+  /**
+   * Silent SSO — checks for an existing GeniusAuth session without any
+   * visible redirect or popup, via a hidden iframe + `prompt=none`.
+   * Resolves the authorization result if the user already has an active
+   * session (so the caller can exchangeToken() right away), or `null` if
+   * they don't (or the check times out) — never rejects.
+   */
+  static async checkSession(options) {
+    const pending = await this.createPendingAuthorization(options.redirectUri);
+    const url = new URL(options.authorizationEndpoint ?? defaultAuthorizationEndpoint);
+    url.search = new URLSearchParams({
+      client_id: options.clientId,
+      redirect_uri: options.redirectUri,
+      response_type: "code",
+      scope: options.scope ?? "openid profile email",
+      state: pending.state,
+      nonce: this.randomValue(32),
+      code_challenge: await this.challenge(pending.codeVerifier),
+      code_challenge_method: "S256",
+      prompt: "none"
+    }).toString();
+    return new Promise((resolve) => {
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.setAttribute("aria-hidden", "true");
+      const finish = (result) => {
+        window.clearTimeout(timeout);
+        window.removeEventListener("message", onMessage);
+        iframe.remove();
+        resolve(result);
+      };
+      const timeout = window.setTimeout(() => finish(null), options.timeoutMs ?? 6e3);
+      const onMessage = (event) => {
+        if (event.origin !== new URL(pending.redirectUri).origin || event.data?.type !== "geniusauth:callback") {
+          return;
+        }
+        sessionStorage.removeItem(storagePrefix + pending.state);
+        if (event.data.error) {
+          finish(null);
+          return;
+        }
+        const result = event.data.result;
+        if (result.state !== pending.state) {
+          finish(null);
+          return;
+        }
+        finish({ ...result, codeVerifier: pending.codeVerifier });
+      };
+      window.addEventListener("message", onMessage);
+      iframe.src = url.toString();
+      document.body.appendChild(iframe);
+    });
   }
   static async exchangeToken(options) {
     const tokenEndpoint = options.tokenEndpoint ?? defaultTokenEndpoint;
@@ -222,6 +278,10 @@ var GeniusAuth = class {
       };
       const onMessage = (event) => {
         if (event.origin !== new URL(pending.redirectUri).origin || event.data?.type !== "geniusauth:callback") {
+          return;
+        }
+        if (event.data.error) {
+          finish(new Error(event.data.error));
           return;
         }
         const result = event.data.result;
